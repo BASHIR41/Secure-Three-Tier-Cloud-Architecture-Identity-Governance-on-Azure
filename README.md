@@ -1,0 +1,77 @@
+# Secure Three-Tier Cloud Architecture & Identity Governance on Azure (Zero-Cost Production-Ready Lab)
+
+## 📌 Project Overview
+This repository contains the architecture, configuration, and documentation for a practical, production-ready **Three-Tier Cloud Network** built natively on Microsoft Azure. The primary objective of this project is to implement corporate-grade network isolation, robust identity governance, and advanced security filtering using native, cost-optimized Azure services without relying on expensive infrastructure overhead.
+
+The entire environment is architected to enforce the **Zero Trust Security Model** and the **Principle of Least Privilege (PoLP)**, ensuring high performance, secure administrative access, and absolute budget protection.
+
+---
+
+## 🛠️ Architecture & Core Components
+
+All resources are dynamically organized within a single, unified resource group (**`RG-Secure-Lab`**) for streamlined governance and automated teardowns.
+
+### 1. Network Topology (`VNet-Main-Prod`)
+Instead of complex, high-overhead routing architectures, a single Virtual Network was deployed and segmented into distinct subnets to restrict lateral movement:
+*   **`Subnet-Frontend` (Address Space: `10.0.1.0/24`):** Designated for public-facing web servers and administrative ingress.
+*   **`Subnet-Backend` (Address Space: `10.0.2.0/24`):** A strictly isolated data tier completely sequestered from direct internet exposure.
+
+### 2. Compute Infrastructure (Linux Nodes)
+*   **`VM-Frontend-Web` (Ubuntu 24.04 LTS):** Provisioned with a Public IP address to serve as a secure gateway/web host.
+*   **`VM-Backend-DB` (Ubuntu 24.04 LTS):** Completely isolated backend database host with **No Public IP address**, rendering it invisible to external threats.
+*   **Sizing:** Deployed using the cost-effective `Standard_B1s` tier, heavily optimizing resource consumption.
+
+---
+
+## 🔒 Advanced Security & Governance Implementation
+
+### 1. Identity & Access Management (Azure RBAC)
+To prevent configuration drift and insider threats, granular access control was enforced at the Resource Group scope:
+*   Assigned the **`Virtual Machine Contributor`** role to abstract compute management from underlying networking primitives.
+*   Enforced strict separation of duties, ensuring administrators can manage workloads, scale compute resources, and trigger power states without possessing rights to alter top-level network topologies or firewalls.
+
+### 2. Role-Based Firewall Filtering (ASGs + NSG)
+To bypass the limitations of hardcoded static IP filtering—which is prone to errors in dynamic cloud environments—**Application Security Groups (ASGs)** were implemented:
+*   Created **`ASG-Web-Servers`** and bound it directly to the virtual network interface (NIC) of `VM-Frontend-Web`.
+*   Created **`ASG-DB-Servers`** and bound it to the NIC of `VM-Backend-DB`.
+*   Configured a singular, highly scalable inbound firewall rule within the **Network Security Group (NSG)**:
+    *   **Source:** `ASG-Web-Servers`
+    *   **Destination:** `ASG-DB-Servers`
+    *   **Protocol/Ports:** `Any` / `*`
+    *   **Action:** `Allow`
+    *   **Priority:** `110`
+
+### 3. Linux Hardening via SSH Key Cryptography
+*   Disabled traditional, brute-force-vulnerable password authentication entirely.
+*   Enforced asymmetric cryptographic validation using **SSH Public/Private Key Pairs (`.pem`)** for all administrative access.
+
+---
+
+## 🏁 Verification & Production-Grade Results
+
+Connectivity and structural integrity were verified live via a decoupled Linux Bash terminal terminal:
+1.  Successfully established an encrypted SSH session to the public boundary node (`VM-Frontend-Web`).
+2.  Executed an internal ICMP diagnostic test targeting the isolated database tier:
+    ```bash
+    ping -c 4 10.0.2.4
+    ```
+
+### 📊 Performance Statistics:
+*   **Packets Transmitted:** 4
+*   **Packets Received:** 4
+*   **Packet Loss:** 0% (Absolute successful transmission)
+*   **Latency (RTT):** Avg `0.950 ms` (Sub-millisecond high-speed backbone performance)
+
+This test confirms that Azure's system routing seamlessly forwards traffic inside the VNet, while our custom NSG/ASG rules properly whitelist legitimate inter-tier communication while dropping unauthenticated requests.
+
+---
+
+## 💡 Key Technical Skills Demonstrated
+*   **Cloud Architecture:** Three-Tier Network Design & Subnet Segmentation.
+*   **Cloud Security:** Application Security Groups (ASG), Network Security Groups (NSG), and Micro-segmentation.
+*   **Identity Governance:** Role-Based Access Control (RBAC) & Principle of Least Privilege (PoLP).
+*   **Linux Administration:** Ubuntu 24.04 Management, SSH Key-Pair Authentication, Bash Network Diagnostics.
+*   **FinOps & Cost Optimization:** Idle resource power management, designing high-fidelity labs with €0/month maintenance costs.
+*   <img width="747" height="499" alt="Screenshot 2026-07-08 211540" src="https://github.com/user-attachments/assets/0da092f1-161b-4083-8815-eb9173810d2a" />
+<img width="1445" height="482" alt="Screenshot 2026-07-08 211801" src="https://github.com/user-attachments/assets/8b91f09a-c6e4-4adc-8d44-825f4ec57229" />
+<img width="8006" height="5825" alt="RG-Secure-Project" src="https://github.com/user-attachments/assets/ef4c1169-9c8a-4811-af7a-694d6043ba3a" />
